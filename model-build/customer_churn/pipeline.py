@@ -112,7 +112,7 @@ def get_pipeline(
     mse_threshold = ParameterFloat(name="MseThreshold", default_value=6.0)    
     
     
-    # processing step for feature engineering
+    # processing step for feature engineering#
     framework_version = "0.23-1"
     sklearn_processor = SKLearnProcessor(
         framework_version=framework_version,
@@ -162,7 +162,8 @@ def get_pipeline(
     train_model_uri = model_uris.retrieve(model_id=model_id, model_version=model_version, model_scope="training")
 
     # URI of your training dataset
-    training_dataset_s3_path = f"s3://{bucket}/output/train"
+    #training_dataset_s3_path = f"s3:///jumpstart-cache-prod-{region}/training-datasets/tabular_multiclass/"
+    training_dataset_s3_path = f"s3://{bucket}/output/train/"
 
     #output_bucket = sagemaker_session.default_bucket()
     output_prefix = "jumpstart-example-tabular-training"
@@ -209,7 +210,7 @@ def get_pipeline(
                 s3_data=step_process.properties.ProcessingOutputConfig.Outputs["validation"].S3Output.S3Uri,
                 content_type="text/csv",
             ),
-            "training":training_dataset_s3_path,
+           # "training":training_dataset_s3_path,
         }
     )
 
@@ -220,14 +221,22 @@ def get_pipeline(
     bucket_script, key = split_s3_path(deploy_source_uri)
     
     Real_path=os.path.join(BASE_DIR, "sourcedir.tar.gz")
+    
+    
     file_name="sourcedir.tar.gz"
     s3.download_file(bucket_script, key, Real_path)
     
     tar = tarfile.open(Real_path)
-    tar.extractall()
+    tar.extractall(BASE_DIR)
+    print(tar.getnames())
     tar.close()
-    
-    
+    print(Real_path)
+    print(os.listdir(BASE_DIR))
+    reqorg=os.path.join(BASE_DIR, "requirements-final.py")
+    reqnew=os.path.join(BASE_DIR, "requirements.txt")
+    ##Updating the default requirements file with the libraries we need. This is Work around
+    os.remove(reqnew)
+    os.rename(reqorg,reqnew)
     inference_instance_type = "ml.m5.4xlarge"
     # Retrieve the inference docker container uri
     deploy_image_uri = image_uris.retrieve(
@@ -240,7 +249,9 @@ def get_pipeline(
     )
     model = Model(
         image_uri=deploy_image_uri,
-        entry_point=os.path.join(BASE_DIR, "inference.py"),
+        entry_point="inference.py",
+        source_dir= BASE_DIR,
+        code_location='s3://' + bucket,
         model_data=training_step.properties.ModelArtifacts.S3ModelArtifacts,
         sagemaker_session=sagemaker_session,
         name="JumpStartRegisterModel",
@@ -270,6 +281,7 @@ def get_pipeline(
     pipeline_name = "sm-jumpstart-churn-prediction-pipeline"
     
     # Combine pipeline steps
+    #test1
     pipeline_steps = [step_process,training_step,step_register]
 
     pipeline = Pipeline(
