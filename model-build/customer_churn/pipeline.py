@@ -213,7 +213,6 @@ def get_pipeline(
            # "training":training_dataset_s3_path,
         }
     )
-
     ##Retrieve inference script
     deploy_source_uri = script_uris.retrieve(
         model_id=model_id, model_version=model_version, script_scope="inference"
@@ -247,7 +246,6 @@ def get_pipeline(
         image_uri=deploy_image_uri,
         entry_point="inference.py",
         source_dir= Inference_dir,
-        code_location='s3://' + bucket,
         model_data=training_step.properties.ModelArtifacts.S3ModelArtifacts,
         sagemaker_session=sagemaker_session,
         name="JumpStartRegisterModel",
