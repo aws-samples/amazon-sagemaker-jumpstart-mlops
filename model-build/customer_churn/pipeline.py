@@ -221,17 +221,13 @@ def get_pipeline(
     bucket_script, key = split_s3_path(deploy_source_uri)
     
     Real_path=os.path.join(BASE_DIR, "sourcedir.tar.gz")
-    
-    
+    Inference_dir=os.path.dirname(os.path.realpath(__file__))
     file_name="sourcedir.tar.gz"
     s3.download_file(bucket_script, key, Real_path)
     
     tar = tarfile.open(Real_path)
     tar.extractall(BASE_DIR)
-    print(tar.getnames())
     tar.close()
-    print(Real_path)
-    print(os.listdir(BASE_DIR))
     reqorg=os.path.join(BASE_DIR, "requirements-final.py")
     reqnew=os.path.join(BASE_DIR, "requirements.txt")
     ##Updating the default requirements file with the libraries we need. This is Work around
@@ -250,7 +246,7 @@ def get_pipeline(
     model = Model(
         image_uri=deploy_image_uri,
         entry_point="inference.py",
-        source_dir= BASE_DIR,
+        source_dir= Inference_dir,
         code_location='s3://' + bucket,
         model_data=training_step.properties.ModelArtifacts.S3ModelArtifacts,
         sagemaker_session=sagemaker_session,
